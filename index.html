@@ -28,24 +28,34 @@
                     <span class="logo-text">Analyst PDF Tool</span>
                 </div>
                 <div class="tool-buttons">
-                    <button class="tool-btn" id="btn-merge" onclick="app.selectTool('merge')">
+                    <button class="tool-btn" id="btn-merge" onclick="app.selectTool('merge')"
+                        data-tooltip="Combine multiple PDFs (Drag to rearrange, double-click to rename)"
+                        data-tooltip-pos="bottom">
                         <i data-lucide="layers"></i>
                         <span>Merge</span>
                     </button>
-                    <button class="tool-btn" id="btn-split" onclick="app.selectTool('split')">
+                    <button class="tool-btn" id="btn-split" onclick="app.selectTool('split')"
+                        data-tooltip="Extract pages or split files" data-tooltip-pos="bottom">
                         <i data-lucide="scissors"></i>
                         <span>Split</span>
                     </button>
-                    <button class="tool-btn" id="btn-compress" onclick="app.selectTool('compress')">
+                    <button class="tool-btn" id="btn-compress" onclick="app.selectTool('compress')"
+                        data-tooltip="Reduce PDF file size" data-tooltip-pos="bottom">
                         <i data-lucide="minimize-2"></i>
                         <span>Compress</span>
                     </button>
                 </div>
                 <div class="nav-actions">
-                    <button class="btn btn-primary" id="install-btn">
+                    <button class="btn btn-primary" id="install-btn" data-tooltip="Install App for Offline Use"
+                        data-tooltip-pos="bottom">
                         <i data-lucide="download"></i> Install App
                     </button>
-                    <button class="btn btn-outline" id="theme-toggle">
+                    <button class="btn btn-outline" id="help-btn" title="" data-tooltip="Help & Documentation"
+                        data-tooltip-pos="bottom">
+                        <i data-lucide="help-circle"></i>
+                    </button>
+                    <button class="btn btn-outline" id="theme-toggle" data-tooltip="Toggle Dark/Light Mode"
+                        data-tooltip-pos="bottom">
                         <i data-lucide="sun"></i>
                     </button>
                 </div>
@@ -74,6 +84,13 @@
                 <div class="sidebar-content">
                     <div class="sidebar-header">
                         <h3 id="sidebar-title">Select a Tool</h3>
+                    </div>
+                    <!-- Added Tip for Renaming in Merge -->
+                    <div id="merge-tip" class="hidden"
+                        style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-glass); border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); border: 1px solid var(--primary);">
+                        <i data-lucide="info"
+                            style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></i>
+                        <strong>Pro Tip:</strong> Double-click any file in the list to rename it before merging.
                     </div>
                     <div id="tool-options" class="tool-options-sidebar">
                         <p class="sidebar-placeholder">Select a tool to process sensitive documents safely. Data stays
@@ -140,6 +157,86 @@
                     <p>Drop PDF files in the area above or click to browse</p>
                 </div>
             </main>
+        </div>
+        <footer class="main-footer">
+            <p>Created by Vikas</p>
+        </footer>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="view-help" class="view-overlay hidden" style="align-items: flex-start; overflow-y: auto; padding: 2rem;">
+        <div class="help-modal">
+            <div class="help-header">
+                <h2><i data-lucide="book-open"></i> User Guide</h2>
+                <button class="btn btn-outline" onclick="document.getElementById('view-help').classList.add('hidden')">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="help-content">
+                <section>
+                    <h3><i data-lucide="shield"></i> Privacy & Security</h3>
+                    <p>This tool works <strong>100% Offline</strong>. Your files are processed entirely within your
+                        browser using WebAssembly. No documents are ever uploaded to any server. You can safely use this
+                        even in Flight Mode.</p>
+                </section>
+
+                <hr>
+
+                <section>
+                    <h3><i data-lucide="layers"></i> Merge Tool</h3>
+                    <p>Combine multiple PDFs into a single document.</p>
+                    <ul>
+                        <li><strong>Drag & Drop:</strong> Reorder files by dragging the thumbnails.</li>
+                        <li><strong>Rename:</strong> Double-click any filename to rename it before merging.</li>
+                        <li><strong>Hyperlinked TOC:</strong> Creates a clickable Table of Contents on the first page
+                            linking to each merged document.</li>
+                        <li><strong>Source Filename:</strong> Stamps the original filename on the top of each page for
+                            reference.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3><i data-lucide="scissors"></i> Split Tool</h3>
+                    <p>Extract specific pages or split a document into parts.</p>
+                    <ul>
+                        <li><strong>Single File:</strong> This tool processes one file at a time.</li>
+                        <li><strong>Page Range:</strong> Enter ranges like <code>1-5, 8, 11-13</code>.
+                            <ul>
+                                <li>Leaving it empty splits <em>every page</em> into a separate file (zipped).</li>
+                                <li>Entering <code>1-5</code> creates a single PDF with just those 5 pages.</li>
+                                <li>Entering <code>1-5, 8</code> creates two PDFs (unless the result is just one file).
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3><i data-lucide="minimize-2"></i> Compress Tool</h3>
+                    <p>Reduce file size by removing unnecessary data.</p>
+                    <ul>
+                        <li><strong>Strip Metadata:</strong> Removes properties like Author, Title, Creator.</li>
+                        <li><strong>Remove Annotations:</strong> Deletes comments, highlights, and sticky notes.</li>
+                        <li><strong>Flatten Forms:</strong> Converts editable form fields into static text
+                            (non-editable).</li>
+                        <li><strong>Remove Attachments:</strong> Strips any files embedded inside the PDF.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3><i data-lucide="download"></i> Installation</h3>
+                    <p>This is a Progressive Web App (PWA). You can install it on your device for offline access by
+                        clicking the <strong>Install App</strong> button in the top right (if supported by your
+                        browser).</p>
+                </section>
+            </div>
+
+            <div class="help-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="text-sm text-muted">Created by Vikas</span>
+                <button class="btn btn-primary"
+                    onclick="document.getElementById('view-help').classList.add('hidden')">Got it!</button>
+            </div>
         </div>
     </div>
 

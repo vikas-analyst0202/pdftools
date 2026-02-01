@@ -61,6 +61,7 @@ const app = {
         const processBtn = document.getElementById('process-btn');
         const themeToggle = document.getElementById('theme-toggle');
         const installBtn = document.getElementById('install-btn');
+        const helpBtn = document.getElementById('help-btn');
 
         // File Selection
         fileInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
@@ -99,6 +100,13 @@ const app = {
 
         // Processing
         processBtn.addEventListener('click', () => this.process());
+
+        // Help Button
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => {
+                document.getElementById('view-help').classList.remove('hidden');
+            });
+        }
 
         // Theme Toggle
         themeToggle.addEventListener('click', () => {
@@ -159,6 +167,16 @@ const app = {
 
         // Setup tool-specific options in sidebar
         this.setupToolOptions(tool);
+
+        // Show/Hide Merge Tip
+        const mergeTip = document.getElementById('merge-tip');
+        if (mergeTip) {
+            if (tool === 'merge') {
+                mergeTip.classList.remove('hidden');
+            } else {
+                mergeTip.classList.add('hidden');
+            }
+        }
 
         // Clear files when switching to single-file tools if multiple selected
         if (tool !== 'merge' && this.selectedFiles.length > 1) {
