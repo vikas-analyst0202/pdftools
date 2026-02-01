@@ -79,6 +79,16 @@ const app = {
         };
         document.getElementById('sidebar-title').textContent = titleMap[tool];
 
+        // Update drop zone text based on tool
+        const dropZoneTitle = document.querySelector('.drop-text h4');
+        if (dropZoneTitle) {
+            if (tool === 'merge') {
+                dropZoneTitle.textContent = 'Drop PDF files here';
+            } else {
+                dropZoneTitle.textContent = 'Drop a PDF file here';
+            }
+        }
+
         // Setup tool-specific options in sidebar
         this.setupToolOptions(tool);
 
@@ -179,12 +189,24 @@ const app = {
     handleFiles(files) {
         const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf');
 
-        if (pdfFiles.length === 0) return;
+        if (pdfFiles.length === 0) {
+            this.showToast('Please select PDF files only', 'error');
+            return;
+        }
 
         if (this.currentTool === 'merge') {
+            // Merge allows multiple files
             this.selectedFiles = [...this.selectedFiles, ...pdfFiles];
         } else {
+            // Split and Compress only allow one file
+            if (this.selectedFiles.length > 0 && pdfFiles.length > 0) {
+                this.showToast('File replaced. Only one PDF allowed for this tool.', 'info');
+            }
             this.selectedFiles = pdfFiles.slice(0, 1);
+
+            if (pdfFiles.length > 1) {
+                this.showToast(`Only the first file selected. ${this.currentTool === 'split' ? 'Split' : 'Compress'} works with one PDF at a time.`, 'info');
+            }
         }
 
         this.updateUI();

@@ -945,6 +945,10 @@ select.form-input {
     border-left: 4px solid #ef4444;
 }
 
+.toast-info {
+    border-left: 4px solid #3b82f6;
+}
+
 .toast-message {
     font-size: 0.95rem;
     font-weight: 500;

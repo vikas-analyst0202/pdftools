@@ -138,7 +138,7 @@ const PDFTools = {
     /**
      * Split a PDF into individual pages or ranges.
      * @param {File} file - Source PDF File object
-     * @param {string} range - Optional range string (e.g., "1-2, 5")
+     * @param {string} range - Optional range string (e.g., "1-5, 1, 3" creates 3 PDFs)
      * @returns {Promise<Blob[]>} - Array of Blobs (one for each extracted part)
      */
     async split(file, range) {
@@ -148,7 +148,7 @@ const PDFTools = {
         const pageCount = srcPdf.getPageCount();
 
         // If no range specified, split into individual pages
-        if (!range) {
+        if (!range || range.trim() === '') {
             const blobs = [];
             for (let i = 0; i < pageCount; i++) {
                 const newDoc = await PDFDocument.create();
@@ -160,13 +160,23 @@ const PDFTools = {
             return blobs;
         }
 
-        // Parse range (e.g., "1-3, 5") - Basic implementation for now
-        const indices = this._parseRange(range, pageCount);
-        const newDoc = await PDFDocument.create();
-        const copiedPages = await newDoc.copyPages(srcPdf, indices);
-        copiedPages.forEach(p => newDoc.addPage(p));
-        const bytes = await newDoc.save();
-        return [new Blob([bytes], { type: 'application/pdf' })];
+        // Parse range and create SEPARATE PDFs for each comma-separated part
+        // e.g., "1-5, 1, 3" creates 3 PDFs
+        const parts = range.split(',').map(p => p.trim()).filter(p => p);
+        const blobs = [];
+
+        for (const part of parts) {
+            const indices = this._parseRangePart(part, pageCount);
+            if (indices.length > 0) {
+                const newDoc = await PDFDocument.create();
+                const copiedPages = await newDoc.copyPages(srcPdf, indices);
+                copiedPages.forEach(p => newDoc.addPage(p));
+                const bytes = await newDoc.save();
+                blobs.push(new Blob([bytes], { type: 'application/pdf' }));
+            }
+        }
+
+        return blobs;
     },
 
     /**
@@ -242,6 +252,26 @@ const PDFTools = {
         });
 
         return Array.from(pages).sort((a, b) => a - b);
+    },
+
+    /**
+     * Helper to parse a SINGLE range part like "1-5" or "3"
+     * Returns 0-indexed page numbers for this part only.
+     */
+    _parseRangePart(part, totalPages) {
+        const pages = [];
+
+        if (part.includes('-')) {
+            const [start, end] = part.split('-').map(Number);
+            for (let i = start; i <= end; i++) {
+                if (i >= 1 && i <= totalPages) pages.push(i - 1);
+            }
+        } else {
+            const p = Number(part);
+            if (p >= 1 && p <= totalPages) pages.push(p - 1);
+        }
+
+        return pages;
     }
 };
 
