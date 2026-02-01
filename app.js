@@ -7,6 +7,8 @@ const app = {
     selectedFiles: [],
     downloadBlob: null,
     downloadFileName: null,
+    draggedIndex: null,
+    dropTargetIndex: null,
 
     init() {
         this.bindEvents();
@@ -237,37 +239,97 @@ const app = {
 
             if (this.currentTool === 'merge') {
                 li.addEventListener('dragstart', (e) => {
+                    this.draggedIndex = index;
                     li.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/plain', index);
                 });
 
-                li.addEventListener('dragend', () => li.classList.remove('dragging'));
+                li.addEventListener('dragend', () => {
+                    li.classList.remove('dragging');
+                    this.clearDropIndicators();
+                    this.draggedIndex = null;
+                    this.dropTargetIndex = null;
+                });
 
                 li.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    const draggingItem = document.querySelector('.dragging');
-                    const siblings = [...fileList.querySelectorAll('.file-thumb:not(.dragging)')];
-                    let nextSibling = siblings.find(sibling => {
-                        const rect = sibling.getBoundingClientRect();
-                        return e.clientX <= rect.left + rect.width / 2;
-                    });
-                    fileList.insertBefore(draggingItem, nextSibling);
+                    e.dataTransfer.dropEffect = 'move';
+
+                    if (this.draggedIndex === index) return;
+
+                    const rect = li.getBoundingClientRect();
+                    const midX = rect.left + rect.width / 2;
+                    const isBeforeMiddle = e.clientX < midX;
+
+                    // Determine insert position
+                    let insertPos;
+                    if (isBeforeMiddle) {
+                        insertPos = index; // Insert before this item
+                    } else {
+                        insertPos = index + 1; // Insert after this item
+                    }
+
+                    // Don't show indicator if dropping at same position
+                    if (insertPos === this.draggedIndex || insertPos === this.draggedIndex + 1) {
+                        this.clearDropIndicators();
+                        this.dropTargetIndex = null;
+                        return;
+                    }
+
+                    this.dropTargetIndex = insertPos;
+                    this.showDropIndicator(li, isBeforeMiddle);
+                });
+
+                li.addEventListener('dragleave', (e) => {
+                    if (!li.contains(e.relatedTarget)) {
+                        li.classList.remove('drop-before', 'drop-after');
+                    }
                 });
 
                 li.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    const oldIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                    const newIndex = [...fileList.querySelectorAll('.file-thumb')].indexOf(li);
+                    e.stopPropagation();
 
-                    // Update the array
-                    const [movedFile] = this.selectedFiles.splice(oldIndex, 1);
-                    this.selectedFiles.splice(newIndex, 0, movedFile);
-                    this.updateUI();
+                    if (this.dropTargetIndex !== null && this.draggedIndex !== null) {
+                        const oldIndex = this.draggedIndex;
+                        let newIndex = this.dropTargetIndex;
+
+                        // Adjust for the removal of the dragged item
+                        if (oldIndex < newIndex) {
+                            newIndex--;
+                        }
+
+                        if (oldIndex !== newIndex) {
+                            const [movedFile] = this.selectedFiles.splice(oldIndex, 1);
+                            this.selectedFiles.splice(newIndex, 0, movedFile);
+                            this.updateUI();
+                        }
+                    }
+                    this.clearDropIndicators();
                 });
             }
 
             fileList.appendChild(li);
         });
+
+        // Add dragover to the file list container for dropping at the end
+        if (this.currentTool === 'merge') {
+            fileList.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            fileList.addEventListener('drop', (e) => {
+                // Only handle if dropped on the list itself, not on a thumb
+                if (e.target === fileList || e.target.classList.contains('file-list')) {
+                    e.preventDefault();
+                    const oldIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const [movedFile] = this.selectedFiles.splice(oldIndex, 1);
+                    this.selectedFiles.push(movedFile);
+                    this.updateUI();
+                }
+            });
+        }
 
         totalSizeSpan.textContent = this.formatFileSize(totalSize);
 
@@ -288,6 +350,21 @@ const app = {
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    },
+
+    clearDropIndicators() {
+        document.querySelectorAll('.drop-before, .drop-after, .drop-target').forEach(el => {
+            el.classList.remove('drop-before', 'drop-after', 'drop-target');
+        });
+    },
+
+    showDropIndicator(element, isBefore) {
+        this.clearDropIndicators();
+        if (isBefore) {
+            element.classList.add('drop-before');
+        } else {
+            element.classList.add('drop-after');
+        }
     },
 
     removeFile(index) {
