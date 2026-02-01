@@ -42,6 +42,9 @@
                     </button>
                 </div>
                 <div class="nav-actions">
+                    <button class="btn btn-primary" id="install-btn">
+                        <i data-lucide="download"></i> Install App
+                    </button>
                     <button class="btn btn-outline" id="theme-toggle">
                         <i data-lucide="sun"></i>
                     </button>
@@ -103,7 +106,9 @@
                 <!-- Processing View -->
                 <div id="view-processing" class="view-overlay hidden">
                     <div class="processing-content">
-                        <div class="spinner"></div>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="processing-bar"></div>
+                        </div>
                         <h2>Processing securely...</h2>
                         <p>No internet used. Your data stays private.</p>
                     </div>

@@ -9,12 +9,29 @@ const app = {
     downloadFileName: null,
     draggedIndex: null,
     dropTargetIndex: null,
+    deferredPrompt: null, // For PWA install
+    progressInterval: null,
 
     init() {
         this.loadTheme();
         this.bindEvents();
-        this.selectTool('merge'); // Default to merge tool
+
+        // Smart Tool Defaults: Load last used tool
+        const savedTool = localStorage.getItem('lastTool') || 'merge';
+        this.selectTool(savedTool);
+
         console.log('Analyst PDF Tool Initialized');
+
+        // PWA Install Prompt Listener
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            const installBtn = document.getElementById('install-btn');
+            if (installBtn) {
+                installBtn.style.display = 'inline-flex';
+                installBtn.classList.remove('hidden');
+            }
+        });
     },
 
     loadTheme() {
@@ -43,17 +60,28 @@ const app = {
         const fileInput = document.getElementById('file-input');
         const processBtn = document.getElementById('process-btn');
         const themeToggle = document.getElementById('theme-toggle');
+        const installBtn = document.getElementById('install-btn');
 
         // File Selection
         fileInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
 
         // Drag and Drop
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('dragover');
         });
 
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('dragleave', (e) => {
+            // Only remove if we really left the element (not just entered a child)
+            if (e.target === dropZone) {
+                dropZone.classList.remove('dragover');
+            }
+        });
 
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
@@ -63,7 +91,8 @@ const app = {
 
         // Click on drop zone to open file dialog
         dropZone.addEventListener('click', (e) => {
-            if (e.target.tagName !== 'SPAN') {
+            // Prevent click when clicking valid children that shouldn't trigger file input
+            if (!e.target.closest('.link-style') && !e.target.closest('input')) {
                 fileInput.click();
             }
         });
@@ -85,11 +114,25 @@ const app = {
             }
             lucide.createIcons();
         });
+
+        // PWA Install Button
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (this.deferredPrompt) {
+                    this.deferredPrompt.prompt();
+                    const { outcome } = await this.deferredPrompt.userChoice;
+                    console.log(`User response to the install prompt: ${outcome}`);
+                    this.deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                }
+            });
+        }
     },
 
     selectTool(tool) {
         // Update current tool
         this.currentTool = tool;
+        localStorage.setItem('lastTool', tool); // Save preference
 
         // Update button states
         document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
@@ -117,10 +160,13 @@ const app = {
         // Setup tool-specific options in sidebar
         this.setupToolOptions(tool);
 
-        // Clear files when switching tools (optional, can be changed)
-        this.clearFiles();
+        // Clear files when switching to single-file tools if multiple selected
+        if (tool !== 'merge' && this.selectedFiles.length > 1) {
+            this.selectedFiles = this.selectedFiles.slice(0, 1);
+            this.showToast('Kept only the first file for this tool.', 'info');
+        }
 
-        // Hide overlays
+        this.updateUI(); // Re-render logic handles visibility
         this.hideOverlays();
     },
 
@@ -226,6 +272,11 @@ const app = {
             return;
         }
 
+        // Initialize display name for new files
+        pdfFiles.forEach(f => {
+            f.displayName = f.name;
+        });
+
         if (this.currentTool === 'merge') {
             // Merge allows multiple files
             this.selectedFiles = [...this.selectedFiles, ...pdfFiles];
@@ -276,20 +327,61 @@ const app = {
             li.dataset.index = index;
 
             const serialNum = index + 1;
+            const displayName = file.displayName || file.name;
+
             li.innerHTML = `
                 <div class="thumb-serial">${serialNum}</div>
-                <button class="btn-remove-thumb" onclick="app.removeFile(${index}); event.stopPropagation();">
+                <button class="btn-remove-thumb">
                     <i data-lucide="x"></i>
                 </button>
                 <div class="thumb-icon">
                     <i data-lucide="file-text"></i>
                 </div>
                 <div class="thumb-info">
-                    <span class="thumb-name" title="${file.name}">${file.name}</span>
+                    <span class="thumb-name" title="${displayName} (Double click to rename)">${displayName}</span>
                     <span class="thumb-size">${this.formatFileSize(file.size)}</span>
                 </div>
                 ${this.currentTool === 'merge' ? `<div class="thumb-drag-hint"><i data-lucide="grip-vertical"></i></div>` : ''}
             `;
+
+            // Inline Rename Logic
+            const nameSpan = li.querySelector('.thumb-name');
+            nameSpan.ondblclick = (e) => {
+                e.stopPropagation();
+                // Replace span with input
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = file.displayName || file.name;
+                input.className = 'thumb-name-input';
+
+                const saveName = () => {
+                    const newName = input.value.trim();
+                    if (newName) {
+                        file.displayName = newName;
+                    }
+                    this.updateUI(); // Re-render to show new name and restore element
+                };
+
+                input.onblur = saveName;
+                input.onkeydown = (ev) => {
+                    if (ev.key === 'Enter') {
+                        saveName();
+                        ev.preventDefault();
+                    }
+                };
+
+                nameSpan.replaceWith(input);
+                input.focus();
+                input.select();
+            };
+
+            // Remove Button Logic
+            const removeBtn = li.querySelector('.btn-remove-thumb');
+            removeBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.removeFile(index);
+            };
 
             if (this.currentTool === 'merge') {
                 li.addEventListener('dragstart', (e) => {
@@ -378,9 +470,11 @@ const app = {
                 if (e.target === fileList || e.target.classList.contains('file-list')) {
                     e.preventDefault();
                     const oldIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                    const [movedFile] = this.selectedFiles.splice(oldIndex, 1);
-                    this.selectedFiles.push(movedFile);
-                    this.updateUI();
+                    if (!isNaN(oldIndex) && oldIndex >= 0 && oldIndex < this.selectedFiles.length) {
+                        const [movedFile] = this.selectedFiles.splice(oldIndex, 1);
+                        this.selectedFiles.push(movedFile);
+                        this.updateUI();
+                    }
                 }
             });
         }
@@ -427,10 +521,36 @@ const app = {
     },
 
     clearFiles() {
+        if (this.selectedFiles.length === 0) return;
+
+        // Backup files for undo
+        const backupFiles = [...this.selectedFiles];
+
         this.selectedFiles = [];
         this.resetFileInput();
         this.updateUI();
         this.hideOverlays();
+
+        // Show undo toast
+        this.showToast(
+            `Files cleared. <button id="undo-btn" class="toast-action-btn">Undo</button>`,
+            'info',
+            5000
+        );
+
+        // Bind undo action
+        setTimeout(() => {
+            const undoBtn = document.getElementById('undo-btn');
+            if (undoBtn) {
+                undoBtn.addEventListener('click', () => {
+                    this.selectedFiles = backupFiles;
+                    this.updateUI();
+                    // Remove toast using closest logic if valid, or just let it expire
+                    const toast = undoBtn.closest('.toast-notification');
+                    if (toast) toast.remove();
+                });
+            }
+        }, 50); // Small delay to ensure DOM update
     },
 
     resetFileInput() {
@@ -441,6 +561,14 @@ const app = {
     hideOverlays() {
         document.getElementById('view-processing').classList.add('hidden');
         document.getElementById('view-success').classList.add('hidden');
+        if (this.progressInterval) clearInterval(this.progressInterval);
+    },
+
+    updateProgressBar(percent) {
+        const bar = document.getElementById('processing-bar');
+        if (bar) {
+            bar.style.width = `${percent}%`;
+        }
     },
 
     async process() {
@@ -449,10 +577,23 @@ const app = {
         // Show processing overlay
         document.getElementById('view-processing').classList.remove('hidden');
         document.getElementById('view-success').classList.add('hidden');
+        this.updateProgressBar(0);
+
+        // Simulate progress
+        let progress = 0;
+        this.progressInterval = setInterval(() => {
+            if (progress < 90) {
+                progress += Math.random() * 10;
+                if (progress > 90) progress = 90;
+                this.updateProgressBar(progress);
+            }
+        }, 200);
 
         try {
             let resultBlob;
             let fileName = 'processed.pdf';
+            const firstFile = this.selectedFiles[0];
+            const firstFileName = firstFile.displayName || firstFile.name; // Use displayName if available
 
             if (this.currentTool === 'merge') {
                 const options = {
@@ -466,19 +607,19 @@ const app = {
             }
             else if (this.currentTool === 'split') {
                 const range = document.getElementById('split-range')?.value;
-                const results = await PDFTools.split(this.selectedFiles[0], range);
+                const results = await PDFTools.split(firstFile, range);
 
                 // If multiple pages and no specific range, create a ZIP
                 if (results.length > 1) {
-                    resultBlob = await this.createZipFromBlobs(results, this.selectedFiles[0].name);
-                    fileName = `split_pages_${this.selectedFiles[0].name.replace('.pdf', '')}.zip`;
+                    resultBlob = await this.createZipFromBlobs(results, firstFileName);
+                    fileName = `split_pages_${firstFileName.replace('.pdf', '')}.zip`;
                 } else {
                     resultBlob = results[0];
-                    fileName = `split_${this.selectedFiles[0].name}`;
+                    fileName = `split_${firstFileName}`;
                 }
             }
             else if (this.currentTool === 'compress') {
-                const originalSize = this.selectedFiles[0].size;
+                const originalSize = firstFile.size;
                 const options = {
                     stripMetadata: document.getElementById('opt-strip-metadata')?.checked,
                     removeAnnotations: document.getElementById('opt-remove-annotations')?.checked,
@@ -486,27 +627,40 @@ const app = {
                     removeBookmarks: document.getElementById('opt-remove-bookmarks')?.checked,
                     removeAttachments: document.getElementById('opt-remove-attachments')?.checked
                 };
-                resultBlob = await PDFTools.compress(this.selectedFiles[0], options);
-                fileName = `compressed_${this.selectedFiles[0].name}`;
+                resultBlob = await PDFTools.compress(firstFile, options);
+                fileName = `compressed_${firstFileName}`;
 
                 // Calculate size reduction
-                const newSize = resultBlob.size;
-                const reduction = ((originalSize - newSize) / originalSize * 100).toFixed(1);
+                const newSize = resultBlob.size; // Note: resultBlob.size is reliable for Blobs
+                const reduction = originalSize > 0 ? ((originalSize - newSize) / originalSize * 100).toFixed(1) : 0;
                 const savedBytes = this.formatFileSize(originalSize - newSize);
 
+                // Finish progress
+                clearInterval(this.progressInterval);
+                this.updateProgressBar(100);
+
                 // Show success with size info
-                this.showSuccess(resultBlob, fileName);
-                if (newSize < originalSize) {
-                    this.showToast(`📉 Reduced by ${reduction}% (saved ${savedBytes})`, 'success');
-                } else {
-                    this.showToast(`File optimized. Size: ${this.formatFileSize(newSize)}`, 'info');
-                }
+                setTimeout(() => {
+                    this.showSuccess(resultBlob, fileName);
+                    if (newSize < originalSize) {
+                        this.showToast(`📉 Reduced by ${reduction}% (saved ${savedBytes})`, 'success');
+                    } else {
+                        this.showToast(`File optimized. Size: ${this.formatFileSize(newSize)}`, 'info');
+                    }
+                }, 500); // Small delay to see 100% bar
                 return; // Don't call showSuccess again
             }
 
-            this.showSuccess(resultBlob, fileName);
+            clearInterval(this.progressInterval);
+            this.updateProgressBar(100);
+
+            setTimeout(() => {
+                this.showSuccess(resultBlob, fileName);
+            }, 500);
+
         } catch (error) {
             console.error('Processing error:', error);
+            clearInterval(this.progressInterval);
             alert('An error occurred while processing the PDF. Please try again.');
             this.hideOverlays();
         }
@@ -516,7 +670,7 @@ const app = {
         try {
             if (typeof JSZip !== 'undefined') {
                 const zip = new JSZip();
-                const baseName = originalFileName.replace('.pdf', '');
+                const baseName = originalFileName.replace(/\.pdf$/i, ''); // Case insensitive replace
                 blobs.forEach((blob, i) => {
                     zip.file(`${baseName}_page_${i + 1}.pdf`, blob);
                 });
@@ -544,6 +698,7 @@ const app = {
     showSuccess(blob, fileName) {
         // Hide processing overlay
         document.getElementById('view-processing').classList.add('hidden');
+        document.getElementById('view-success').classList.remove('hidden'); // Ensure success view is shown
 
         // Store blob and filename
         this.downloadBlob = blob;
@@ -556,7 +711,7 @@ const app = {
         this.showToast(`✓ ${fileName} downloaded successfully!`, 'success');
     },
 
-    showToast(message, type = 'info') {
+    showToast(message, type = 'info', duration = 4000) {
         // Remove existing toast if any
         const existingToast = document.querySelector('.toast-notification');
         if (existingToast) {
@@ -576,13 +731,13 @@ const app = {
         document.body.appendChild(toast);
         lucide.createIcons();
 
-        // Auto-remove after 4 seconds
+        // Auto-remove after duration
         setTimeout(() => {
             if (toast.parentElement) {
                 toast.classList.add('toast-fade-out');
                 setTimeout(() => toast.remove(), 300);
             }
-        }, 4000);
+        }, duration);
     },
 
     triggerDownload() {

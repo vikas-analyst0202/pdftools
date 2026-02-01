@@ -29,14 +29,16 @@ const PDFTools = {
 
             // Record start page for TOC (considering TOC page will be index 0)
             const startPageIndex = options.toc ? totalPagesProcessed + 1 : totalPagesProcessed;
-            tocEntries.push({ title: file.name, pageIndex: startPageIndex });
+            const fileName = file.displayName || file.name;
+            tocEntries.push({ title: fileName, pageIndex: startPageIndex });
 
             copiedPages.forEach((page, i) => {
                 const { width, height } = page.getSize();
 
                 // Add Source Filename
                 if (options.filename) {
-                    page.drawText(`Source: ${file.name}`, {
+                    const fileName = file.displayName || file.name;
+                    page.drawText(`Source: ${fileName}`, {
                         x: 50,
                         y: 20,
                         size: 9,
