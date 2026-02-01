@@ -472,39 +472,47 @@ const app = {
     },
 
     showSuccess(blob, fileName) {
-        // Store blob and filename for download button
+        // Hide processing overlay
+        document.getElementById('view-processing').classList.add('hidden');
+
+        // Store blob and filename
         this.downloadBlob = blob;
         this.downloadFileName = fileName;
 
-        const downloadLink = document.getElementById('download-link');
+        // Auto-download the file
+        this.triggerDownload();
 
-        // Remove old event listener if exists
-        const newDownloadLink = downloadLink.cloneNode(true);
-        downloadLink.parentNode.replaceChild(newDownloadLink, downloadLink);
+        // Show success toast notification
+        this.showToast(`✓ ${fileName} downloaded successfully!`, 'success');
+    },
 
-        // Add click handler for direct download
-        newDownloadLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.triggerDownload();
-        });
-
-        // Update success view based on file type
-        const successTitle = document.querySelector('#view-success h2');
-        const successDesc = document.querySelector('#view-success p');
-
-        if (fileName.endsWith('.zip')) {
-            successTitle.textContent = 'Split Complete!';
-            successDesc.textContent = 'Your ZIP file with all split pages is ready.';
-        } else {
-            successTitle.textContent = 'Task Completed!';
-            successDesc.textContent = 'Your processed file is ready for download.';
+    showToast(message, type = 'info') {
+        // Remove existing toast if any
+        const existingToast = document.querySelector('.toast-notification');
+        if (existingToast) {
+            existingToast.remove();
         }
 
-        // Show success overlay
-        document.getElementById('view-processing').classList.add('hidden');
-        document.getElementById('view-success').classList.remove('hidden');
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast-notification toast-${type}`;
+        toast.innerHTML = `
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+                <i data-lucide="x"></i>
+            </button>
+        `;
 
+        document.body.appendChild(toast);
         lucide.createIcons();
+
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.add('toast-fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 4000);
     },
 
     triggerDownload() {
