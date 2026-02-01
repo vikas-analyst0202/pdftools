@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Master | Pro PDF Tools Online</title>
+    <title>Analyst PDF Tool | Secure & Offline</title>
     <meta name="description"
-        content="Merge, split, and compress PDFs instantly in your browser. Fast, secure, and works offline.">
+        content="Secure PDF utility for Credit Analysts. Process financial documents, merge credit reports, and compress statements 100% offline. No data upload.">
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <!-- Local Fonts (System Stack used in CSS) -->
@@ -25,7 +25,7 @@
             <nav class="container">
                 <div class="logo">
                     <i data-lucide="file-text" class="logo-icon"></i>
-                    <span class="logo-text">PDF Master</span>
+                    <span class="logo-text">Analyst PDF Tool</span>
                 </div>
                 <div class="tool-buttons">
                     <button class="tool-btn" id="btn-merge" onclick="app.selectTool('merge')">
@@ -55,9 +55,9 @@
                 <div class="drop-content-wide">
                     <i data-lucide="upload-cloud" class="upload-icon"></i>
                     <div class="drop-text">
-                        <h4>Drop PDF files here</h4>
-                        <p class="text-sm text-muted">or <span class="link-style"
-                                onclick="document.getElementById('file-input').click()">browse files</span></p>
+                        <h4>Drop financial docs here (Processed Locally)</h4>
+                        <p class="text-sm text-muted">100% Local & Secure. <span class="link-style"
+                                onclick="document.getElementById('file-input').click()">Browse Files</span></p>
                     </div>
                 </div>
                 <input type="file" id="file-input" hidden multiple accept=".pdf">
@@ -73,7 +73,8 @@
                         <h3 id="sidebar-title">Select a Tool</h3>
                     </div>
                     <div id="tool-options" class="tool-options-sidebar">
-                        <p class="sidebar-placeholder">Choose a tool from the header to see options</p>
+                        <p class="sidebar-placeholder">Select a tool to process sensitive documents safely. Data stays
+                            on device.</p>
                     </div>
                 </div>
             </aside>
@@ -103,8 +104,8 @@
                 <div id="view-processing" class="view-overlay hidden">
                     <div class="processing-content">
                         <div class="spinner"></div>
-                        <h2>Processing your files...</h2>
-                        <p>Hang tight, this won't take long.</p>
+                        <h2>Processing securely...</h2>
+                        <p>No internet used. Your data stays private.</p>
                     </div>
                 </div>
 
@@ -114,8 +115,8 @@
                         <div class="success-icon">
                             <i data-lucide="check-circle"></i>
                         </div>
-                        <h2>Tasks Completed!</h2>
-                        <p>Your processed files are ready for download.</p>
+                        <h2>Secure Task Completed!</h2>
+                        <p>Your confidential files are ready. No servers involved.</p>
                         <div class="success-actions">
                             <a id="download-link" class="btn btn-large btn-gradient" download>
                                 Download Now

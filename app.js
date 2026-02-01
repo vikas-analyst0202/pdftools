@@ -110,28 +110,28 @@ const app = {
                             <input type="checkbox" id="opt-toc" checked>
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Hyperlinked TOC</span>
-                                <span class="checkbox-desc">Generate a table of contents on page 1</span>
+                                <span class="checkbox-desc">Add clickable Table of Contents (Page 1)</span>
                             </div>
                         </label>
                         <label class="checkbox-item">
                             <input type="checkbox" id="opt-filename" checked>
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Source Filename</span>
-                                <span class="checkbox-desc">Add source filename to each page</span>
+                                <span class="checkbox-desc">Stamp source filename on every page</span>
                             </div>
                         </label>
                         <label class="checkbox-item">
                             <input type="checkbox" id="opt-orig-pages" checked>
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Original Page Numbers</span>
-                                <span class="checkbox-desc">Add original - 1/56 to each page</span>
+                                <span class="checkbox-desc">Retain original paging (e.g., "1/56")</span>
                             </div>
                         </label>
                         <label class="checkbox-item">
                             <input type="checkbox" id="opt-final-pages" checked>
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Final Page Numbers</span>
-                                <span class="checkbox-desc">Add sequential page numbers to final doc</span>
+                                <span class="checkbox-desc">Add sequential numbering to combined doc</span>
                             </div>
                         </label>
                     </div>
