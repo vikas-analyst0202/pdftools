@@ -95,28 +95,28 @@ const app = {
                 <div class="tool-option-group">
                     <div class="checkbox-group">
                         <label class="checkbox-item">
-                            <input type="checkbox" id="opt-toc">
+                            <input type="checkbox" id="opt-toc" checked>
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Hyperlinked TOC</span>
                                 <span class="checkbox-desc">Generate a table of contents on page 1</span>
                             </div>
                         </label>
                         <label class="checkbox-item">
-                            <input type="checkbox" id="opt-filename">
+                            <input type="checkbox" id="opt-filename" checked>
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Source Filename</span>
                                 <span class="checkbox-desc">Add source filename to each page</span>
                             </div>
                         </label>
                         <label class="checkbox-item">
-                            <input type="checkbox" id="opt-orig-pages">
+                            <input type="checkbox" id="opt-orig-pages" checked>
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Original Page Numbers</span>
                                 <span class="checkbox-desc">Add original - 1/56 to each page</span>
                             </div>
                         </label>
                         <label class="checkbox-item">
-                            <input type="checkbox" id="opt-final-pages">
+                            <input type="checkbox" id="opt-final-pages" checked>
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Final Page Numbers</span>
                                 <span class="checkbox-desc">Add sequential page numbers to final doc</span>
@@ -209,7 +209,7 @@ const app = {
         this.selectedFiles.forEach((file, index) => {
             totalSize += file.size;
             const li = document.createElement('li');
-            li.className = 'file-item';
+            li.className = 'file-thumb';
 
             // Only allow dragging for merge tool
             if (this.currentTool === 'merge') {
@@ -219,19 +219,20 @@ const app = {
             }
             li.dataset.index = index;
 
+            const serialNum = index + 1;
             li.innerHTML = `
-                ${this.currentTool === 'merge' ? `
-                <div class="file-drag-handle">
-                    <i data-lucide="grip-vertical"></i>
-                </div>` : ''}
-                <i data-lucide="file" class="file-icon"></i>
-                <div class="file-info">
-                    <span class="file-name">${file.name}</span>
-                    <span class="file-meta">${this.formatFileSize(file.size)}</span>
-                </div>
-                <button class="btn-remove" onclick="app.removeFile(${index}); event.stopPropagation();">
+                <div class="thumb-serial">${serialNum}</div>
+                <button class="btn-remove-thumb" onclick="app.removeFile(${index}); event.stopPropagation();">
                     <i data-lucide="x"></i>
                 </button>
+                <div class="thumb-icon">
+                    <i data-lucide="file-text"></i>
+                </div>
+                <div class="thumb-info">
+                    <span class="thumb-name" title="${file.name}">${file.name}</span>
+                    <span class="thumb-size">${this.formatFileSize(file.size)}</span>
+                </div>
+                ${this.currentTool === 'merge' ? `<div class="thumb-drag-hint"><i data-lucide="grip-vertical"></i></div>` : ''}
             `;
 
             if (this.currentTool === 'merge') {
@@ -245,9 +246,10 @@ const app = {
                 li.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     const draggingItem = document.querySelector('.dragging');
-                    const siblings = [...fileList.querySelectorAll('.file-item:not(.dragging)')];
+                    const siblings = [...fileList.querySelectorAll('.file-thumb:not(.dragging)')];
                     let nextSibling = siblings.find(sibling => {
-                        return e.clientY <= sibling.getBoundingClientRect().top + sibling.getBoundingClientRect().height / 2;
+                        const rect = sibling.getBoundingClientRect();
+                        return e.clientX <= rect.left + rect.width / 2;
                     });
                     fileList.insertBefore(draggingItem, nextSibling);
                 });
@@ -255,7 +257,7 @@ const app = {
                 li.addEventListener('drop', (e) => {
                     e.preventDefault();
                     const oldIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                    const newIndex = [...fileList.querySelectorAll('.file-item')].indexOf(li);
+                    const newIndex = [...fileList.querySelectorAll('.file-thumb')].indexOf(li);
 
                     // Update the array
                     const [movedFile] = this.selectedFiles.splice(oldIndex, 1);
