@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Master | Pro PDF Tools Online</title>
+    <meta name="description"
+        content="Merge, split, and compress PDFs instantly in your browser. Fast, secure, and works offline.">
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- pdf-lib -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- JSZip for splitting PDFs into multiple files -->
+    <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+
+<body class="light-mode">
+    <div id="app">
+        <!-- Header with Logo, Tool Buttons, and Theme Toggle -->
+        <header>
+            <nav class="container">
+                <div class="logo">
+                    <i data-lucide="file-text" class="logo-icon"></i>
+                    <span class="logo-text">PDF Master</span>
+                </div>
+                <div class="tool-buttons">
+                    <button class="tool-btn" id="btn-merge" onclick="app.selectTool('merge')">
+                        <i data-lucide="layers"></i>
+                        <span>Merge</span>
+                    </button>
+                    <button class="tool-btn" id="btn-split" onclick="app.selectTool('split')">
+                        <i data-lucide="scissors"></i>
+                        <span>Split</span>
+                    </button>
+                    <button class="tool-btn" id="btn-compress" onclick="app.selectTool('compress')">
+                        <i data-lucide="minimize-2"></i>
+                        <span>Compress</span>
+                    </button>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn btn-outline" id="theme-toggle">
+                        <i data-lucide="sun"></i>
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Top Bar - Full Width Drop Zone -->
+        <div class="top-drop-bar">
+            <div class="drop-zone-wide" id="drop-zone">
+                <div class="drop-content-wide">
+                    <i data-lucide="upload-cloud" class="upload-icon"></i>
+                    <div class="drop-text">
+                        <h4>Drop PDF files here</h4>
+                        <p class="text-sm text-muted">or <span class="link-style"
+                                onclick="document.getElementById('file-input').click()">browse files</span></p>
+                    </div>
+                </div>
+                <input type="file" id="file-input" hidden multiple accept=".pdf">
+            </div>
+        </div>
+
+        <!-- Main Layout: Sidebar + Content -->
+        <div class="main-layout">
+            <!-- Left Sidebar - Tool Options -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-content">
+                    <div class="sidebar-header">
+                        <h3 id="sidebar-title">Select a Tool</h3>
+                    </div>
+                    <div id="tool-options" class="tool-options-sidebar">
+                        <p class="sidebar-placeholder">Choose a tool from the header to see options</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="content-area">
+                <!-- File List -->
+                <div id="file-list-container" class="file-list-container hidden">
+                    <div class="file-list-header">
+                        <h3>Selected Files (<span id="file-count">0</span>) · <span id="total-size">0 KB</span></h3>
+                        <p class="reorder-hint text-sm text-muted">Drag to reorder</p>
+                        <button class="btn btn-link" onclick="app.clearFiles()">Clear All</button>
+                    </div>
+                    <ul id="file-list" class="file-list">
+                        <!-- File items will be injected here -->
+                    </ul>
+                </div>
+
+                <!-- Process Button -->
+                <div class="action-btn-container hidden" id="action-container">
+                    <button class="btn btn-large btn-gradient" id="process-btn">
+                        <i data-lucide="zap"></i> Process Files
+                    </button>
+                </div>
+
+                <!-- Processing View -->
+                <div id="view-processing" class="view-overlay hidden">
+                    <div class="processing-content">
+                        <div class="spinner"></div>
+                        <h2>Processing your files...</h2>
+                        <p>Hang tight, this won't take long.</p>
+                    </div>
+                </div>
+
+                <!-- Success View -->
+                <div id="view-success" class="view-overlay hidden">
+                    <div class="success-content">
+                        <div class="success-icon">
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <h2>Tasks Completed!</h2>
+                        <p>Your processed files are ready for download.</p>
+                        <div class="success-actions">
+                            <a id="download-link" class="btn btn-large btn-gradient" download>
+                                Download Now
+                            </a>
+                            <button class="btn btn-outline" onclick="app.resetToDefault()">
+                                Process Another
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="empty-state">
+                    <i data-lucide="file-plus" class="empty-icon"></i>
+                    <h3>No files selected</h3>
+                    <p>Drop PDF files in the area above or click to browse</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="pdf-tools.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
