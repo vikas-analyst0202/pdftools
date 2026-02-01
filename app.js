@@ -150,34 +150,41 @@ const app = {
         } else if (tool === 'compress') {
             optionsContainer.innerHTML = `
                 <div class="tool-option-group">
-                    <div class="tool-option-item">
-                        <label>Optimization Level</label>
-                        <select id="opt-level" class="form-input">
-                            <option value="extreme">Extreme (Smallest)</option>
-                            <option value="recommended" selected>Recommended</option>
-                            <option value="low">Low (Best quality)</option>
-                        </select>
-                    </div>
+                    <p class="text-sm text-muted" style="margin-bottom: 1rem;">Select what to remove to reduce file size:</p>
                     <div class="checkbox-group">
                         <label class="checkbox-item">
-                            <input type="checkbox" id="opt-grayscale">
+                            <input type="checkbox" id="opt-strip-metadata" checked>
                             <div class="checkbox-label">
-                                <span class="checkbox-title">Grayscale</span>
-                                <span class="checkbox-desc">Remove colors to save space</span>
+                                <span class="checkbox-title">Strip Metadata</span>
+                                <span class="checkbox-desc">Remove title, author, keywords, etc.</span>
                             </div>
                         </label>
                         <label class="checkbox-item">
-                            <input type="checkbox" id="opt-strip" checked>
+                            <input type="checkbox" id="opt-remove-annotations" checked>
                             <div class="checkbox-label">
-                                <span class="checkbox-title">Strip Metadata</span>
-                                <span class="checkbox-desc">Remove hidden info and annotations</span>
+                                <span class="checkbox-title">Remove Annotations</span>
+                                <span class="checkbox-desc">Remove comments, highlights, sticky notes</span>
                             </div>
                         </label>
                         <label class="checkbox-item">
                             <input type="checkbox" id="opt-flatten">
                             <div class="checkbox-label">
                                 <span class="checkbox-title">Flatten Forms</span>
-                                <span class="checkbox-desc">Turn forms into permanent text</span>
+                                <span class="checkbox-desc">Convert editable forms to static text</span>
+                            </div>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="opt-remove-bookmarks">
+                            <div class="checkbox-label">
+                                <span class="checkbox-title">Remove Bookmarks</span>
+                                <span class="checkbox-desc">Remove outline/navigation bookmarks</span>
+                            </div>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="opt-remove-attachments">
+                            <div class="checkbox-label">
+                                <span class="checkbox-title">Remove Embedded Files</span>
+                                <span class="checkbox-desc">Remove any attached files inside PDF</span>
                             </div>
                         </label>
                     </div>
@@ -446,14 +453,30 @@ const app = {
                 }
             }
             else if (this.currentTool === 'compress') {
+                const originalSize = this.selectedFiles[0].size;
                 const options = {
-                    level: document.getElementById('opt-level')?.value || 'recommended',
-                    grayscale: document.getElementById('opt-grayscale')?.checked,
-                    strip: document.getElementById('opt-strip')?.checked,
-                    flatten: document.getElementById('opt-flatten')?.checked
+                    stripMetadata: document.getElementById('opt-strip-metadata')?.checked,
+                    removeAnnotations: document.getElementById('opt-remove-annotations')?.checked,
+                    flatten: document.getElementById('opt-flatten')?.checked,
+                    removeBookmarks: document.getElementById('opt-remove-bookmarks')?.checked,
+                    removeAttachments: document.getElementById('opt-remove-attachments')?.checked
                 };
                 resultBlob = await PDFTools.compress(this.selectedFiles[0], options);
                 fileName = `compressed_${this.selectedFiles[0].name}`;
+
+                // Calculate size reduction
+                const newSize = resultBlob.size;
+                const reduction = ((originalSize - newSize) / originalSize * 100).toFixed(1);
+                const savedBytes = this.formatFileSize(originalSize - newSize);
+
+                // Show success with size info
+                this.showSuccess(resultBlob, fileName);
+                if (newSize < originalSize) {
+                    this.showToast(`📉 Reduced by ${reduction}% (saved ${savedBytes})`, 'success');
+                } else {
+                    this.showToast(`File optimized. Size: ${this.formatFileSize(newSize)}`, 'info');
+                }
+                return; // Don't call showSuccess again
             }
 
             this.showSuccess(resultBlob, fileName);

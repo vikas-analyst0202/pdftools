@@ -180,52 +180,86 @@ const PDFTools = {
     },
 
     /**
-     * "Compress" PDF by removing unused objects and optimizing page structure.
-     * Note: Purely client-side compression is limited compared to server-side.
+     * Optimize PDF by removing unnecessary data.
+     * Note: Client-side compression is limited - we can remove data but not recompress images.
      * @param {File} file - Source PDF File object
+     * @param {Object} options - Optimization options
      * @returns {Promise<Blob>} - Optimized PDF Blob
      */
     async compress(file, options = {}) {
-        const { PDFDocument } = PDFLib;
+        const { PDFDocument, PDFName } = PDFLib;
         const arrayBuffer = await file.arrayBuffer();
         const pdfDoc = await PDFDocument.load(arrayBuffer);
 
-        // 1. Strip Metadata & Annotations
-        if (options.strip) {
+        // 1. Strip Metadata
+        if (options.stripMetadata) {
             pdfDoc.setTitle('');
             pdfDoc.setAuthor('');
             pdfDoc.setSubject('');
             pdfDoc.setKeywords([]);
             pdfDoc.setProducer('');
             pdfDoc.setCreator('');
+            pdfDoc.setCreationDate(new Date(0));
+            pdfDoc.setModificationDate(new Date(0));
+        }
 
+        // 2. Remove Annotations (comments, highlights, sticky notes)
+        if (options.removeAnnotations) {
             const pages = pdfDoc.getPages();
             pages.forEach(page => {
-                if (page.node.has(PDFLib.PDFName.of('Annots'))) {
-                    page.node.delete(PDFLib.PDFName.of('Annots'));
+                if (page.node.has(PDFName.of('Annots'))) {
+                    page.node.delete(PDFName.of('Annots'));
                 }
             });
         }
 
-        // 2. Flatten Form Fields
+        // 3. Flatten Form Fields
         if (options.flatten) {
-            const form = pdfDoc.getForm();
             try {
+                const form = pdfDoc.getForm();
                 form.flatten();
             } catch (e) {
-                console.warn('Form flattening skipped', e);
+                console.warn('Form flattening skipped (no forms or error):', e.message);
             }
         }
 
-        // 3. Image Optimization & Grayscale
-        // In a real-world scenario, we'd extract and re-compress images. 
-        // For this version, we will focus on the highly effective useObjectStreams 
-        // and structural cleanup which pdf-lib handles very well.
+        // 4. Remove Bookmarks/Outlines
+        if (options.removeBookmarks) {
+            try {
+                const catalog = pdfDoc.catalog;
+                if (catalog.has(PDFName.of('Outlines'))) {
+                    catalog.delete(PDFName.of('Outlines'));
+                }
+            } catch (e) {
+                console.warn('Bookmark removal skipped:', e.message);
+            }
+        }
 
+        // 5. Remove Embedded Files/Attachments
+        if (options.removeAttachments) {
+            try {
+                const catalog = pdfDoc.catalog;
+                // Remove Names dictionary entries for embedded files
+                if (catalog.has(PDFName.of('Names'))) {
+                    const names = catalog.get(PDFName.of('Names'));
+                    if (names && names.has && names.has(PDFName.of('EmbeddedFiles'))) {
+                        names.delete(PDFName.of('EmbeddedFiles'));
+                    }
+                }
+                // Remove AF (Associated Files) array
+                if (catalog.has(PDFName.of('AF'))) {
+                    catalog.delete(PDFName.of('AF'));
+                }
+            } catch (e) {
+                console.warn('Attachment removal skipped:', e.message);
+            }
+        }
+
+        // Save with optimization options
         const pdfBytes = await pdfDoc.save({
-            useObjectStreams: true,
-            addDefaultPage: false,
-            updateFieldAppearances: false
+            useObjectStreams: true,      // Combine objects into streams (reduces size)
+            addDefaultPage: false,       // Don't add empty pages
+            updateFieldAppearances: false // Skip regenerating form appearances
         });
 
         return new Blob([pdfBytes], { type: 'application/pdf' });
