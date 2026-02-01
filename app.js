@@ -11,9 +11,31 @@ const app = {
     dropTargetIndex: null,
 
     init() {
+        this.loadTheme();
         this.bindEvents();
         this.selectTool('merge'); // Default to merge tool
-        console.log('PDF Master Initialized');
+        console.log('Analyst PDF Tool Initialized');
+    },
+
+    loadTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const themeToggle = document.getElementById('theme-toggle');
+        if (!themeToggle) return;
+
+        const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let isDark = false;
+
+        // Default is light (has class 'light-mode'). 
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            document.body.classList.remove('light-mode');
+            isDark = true;
+        } else {
+            document.body.classList.add('light-mode');
+        }
+
+        // Reset icon HTML and re-render
+        themeToggle.innerHTML = `<i data-lucide="${isDark ? 'moon' : 'sun'}"></i>`;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     },
 
     bindEvents() {
@@ -52,11 +74,14 @@ const app = {
         // Theme Toggle
         themeToggle.addEventListener('click', () => {
             document.body.classList.toggle('light-mode');
-            const icon = themeToggle.querySelector('i');
-            if (document.body.classList.contains('light-mode')) {
-                icon.setAttribute('data-lucide', 'sun');
+            const isLight = document.body.classList.contains('light-mode');
+
+            if (isLight) {
+                themeToggle.innerHTML = '<i data-lucide="sun"></i>';
+                localStorage.setItem('theme', 'light');
             } else {
-                icon.setAttribute('data-lucide', 'moon');
+                themeToggle.innerHTML = '<i data-lucide="moon"></i>';
+                localStorage.setItem('theme', 'dark');
             }
             lucide.createIcons();
         });
