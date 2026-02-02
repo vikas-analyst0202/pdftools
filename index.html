@@ -50,6 +50,11 @@
                         data-tooltip-pos="bottom">
                         <i data-lucide="download"></i> Install App
                     </button>
+                    <button class="btn btn-outline hidden" id="offline-badge"
+                        data-tooltip="Works 100% Offline. No internet connection required. No files are uploaded."
+                        data-tooltip-pos="bottom">
+                        <i data-lucide="wifi-off"></i>
+                    </button>
                     <button class="btn btn-outline" id="help-btn" title="" data-tooltip="Help & Documentation"
                         data-tooltip-pos="bottom">
                         <i data-lucide="help-circle"></i>
@@ -252,6 +257,16 @@
                 navigator.serviceWorker.register('./service-worker.js')
                     .then((registration) => {
                         console.log('ServiceWorker registration successful with scope: ', registration.scope);
+
+                        // Show offline badge when service worker is ready
+                        navigator.serviceWorker.ready.then(() => {
+                            const badge = document.getElementById('offline-badge');
+                            if (badge) {
+                                badge.classList.remove('hidden');
+                                // Trigger a small message in console for debug
+                                console.log('App is ready for offline use.');
+                            }
+                        });
                     })
                     .catch((err) => {
                         console.log('ServiceWorker registration failed: ', err);
