@@ -1,6 +1,6 @@
 {
-  "name": "PDF Master",
-  "short_name": "PDF Master",
+  "name": "PDF Tools- Merge, Split, Compress",
+  "short_name": "PDF Tools",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",
