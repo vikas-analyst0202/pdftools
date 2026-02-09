@@ -120,6 +120,16 @@
 
                 <!-- Process Button -->
                 <div class="action-btn-container hidden" id="action-container">
+                    <div class="output-filename-wrapper">
+                        <label for="output-filename" class="output-filename-label">
+                            <i data-lucide="file-output"></i>
+                            Output Filename:
+                        </label>
+                        <div class="output-filename-input-group">
+                            <input type="text" id="output-filename" class="output-filename-input" placeholder="merged_document">
+                            <span class="output-filename-ext" id="output-filename-ext">.pdf</span>
+                        </div>
+                    </div>
                     <button class="btn btn-large btn-gradient" id="process-btn">
                         <i data-lucide="zap"></i> Process Files
                     </button>

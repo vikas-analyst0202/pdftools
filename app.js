@@ -185,6 +185,7 @@ const app = {
         }
 
         this.updateUI(); // Re-render logic handles visibility
+        this.updateOutputFilename(); // Update default filename for the tool
         this.hideOverlays();
     },
 
@@ -311,6 +312,7 @@ const app = {
         }
 
         this.updateUI();
+        this.updateOutputFilename(); // Update filename based on selected files
     },
 
     updateUI() {
@@ -536,6 +538,7 @@ const app = {
     removeFile(index) {
         this.selectedFiles.splice(index, 1);
         this.updateUI();
+        this.updateOutputFilename(); // Update filename when files change
     },
 
     clearFiles() {
@@ -576,6 +579,31 @@ const app = {
         if (fileInput) fileInput.value = '';
     },
 
+    updateOutputFilename() {
+        const filenameInput = document.getElementById('output-filename');
+        const extSpan = document.getElementById('output-filename-ext');
+        if (!filenameInput || !extSpan) return;
+
+        const firstFile = this.selectedFiles[0];
+        const firstFileName = firstFile ? (firstFile.displayName || firstFile.name).replace(/\.pdf$/i, '') : '';
+
+        let defaultName = '';
+        let extension = '.pdf';
+
+        if (this.currentTool === 'merge') {
+            defaultName = 'merged_document';
+        } else if (this.currentTool === 'split') {
+            defaultName = firstFileName ? `split_${firstFileName}` : 'split_pages';
+            extension = '.zip'; // Split typically produces multiple files in a ZIP
+        } else if (this.currentTool === 'compress') {
+            defaultName = firstFileName ? `compressed_${firstFileName}` : 'compressed_document';
+        }
+
+        filenameInput.value = defaultName;
+        filenameInput.placeholder = defaultName;
+        extSpan.textContent = extension;
+    },
+
     hideOverlays() {
         document.getElementById('view-processing').classList.add('hidden');
         document.getElementById('view-success').classList.add('hidden');
@@ -609,9 +637,12 @@ const app = {
 
         try {
             let resultBlob;
-            let fileName = 'processed.pdf';
             const firstFile = this.selectedFiles[0];
             const firstFileName = firstFile.displayName || firstFile.name; // Use displayName if available
+
+            // Get custom filename from input
+            const filenameInput = document.getElementById('output-filename');
+            const customName = filenameInput?.value.trim() || '';
 
             if (this.currentTool === 'merge') {
                 const options = {
@@ -621,7 +652,6 @@ const app = {
                     finalPages: document.getElementById('opt-final-pages')?.checked
                 };
                 resultBlob = await PDFTools.merge(this.selectedFiles, options);
-                fileName = 'merged_document.pdf';
             }
             else if (this.currentTool === 'split') {
                 const range = document.getElementById('split-range')?.value;
@@ -630,10 +660,8 @@ const app = {
                 // If multiple pages and no specific range, create a ZIP
                 if (results.length > 1) {
                     resultBlob = await this.createZipFromBlobs(results, firstFileName);
-                    fileName = `split_pages_${firstFileName.replace('.pdf', '')}.zip`;
                 } else {
                     resultBlob = results[0];
-                    fileName = `split_${firstFileName}`;
                 }
             }
             else if (this.currentTool === 'compress') {
@@ -646,12 +674,14 @@ const app = {
                     removeAttachments: document.getElementById('opt-remove-attachments')?.checked
                 };
                 resultBlob = await PDFTools.compress(firstFile, options);
-                fileName = `compressed_${firstFileName}`;
 
                 // Calculate size reduction
                 const newSize = resultBlob.size; // Note: resultBlob.size is reliable for Blobs
                 const reduction = originalSize > 0 ? ((originalSize - newSize) / originalSize * 100).toFixed(1) : 0;
                 const savedBytes = this.formatFileSize(originalSize - newSize);
+
+                // Determine filename with extension
+                const compressFileName = (customName || `compressed_${firstFileName.replace(/\.pdf$/i, '')}`) + '.pdf';
 
                 // Finish progress
                 clearInterval(this.progressInterval);
@@ -659,7 +689,7 @@ const app = {
 
                 // Show success with size info
                 setTimeout(() => {
-                    this.showSuccess(resultBlob, fileName);
+                    this.showSuccess(resultBlob, compressFileName);
                     if (newSize < originalSize) {
                         this.showToast(`📉 Reduced by ${reduction}% (saved ${savedBytes})`, 'success');
                     } else {
@@ -669,11 +699,24 @@ const app = {
                 return; // Don't call showSuccess again
             }
 
+            // Determine final filename based on tool and custom input
+            let finalFileName;
+            if (this.currentTool === 'merge') {
+                finalFileName = (customName || 'merged_document') + '.pdf';
+            } else if (this.currentTool === 'split') {
+                // Check if it's a ZIP (multiple files) or single PDF
+                const isZip = resultBlob.type === 'application/zip' || resultBlob.type === 'application/x-zip-compressed';
+                const ext = isZip ? '.zip' : '.pdf';
+                finalFileName = (customName || `split_${firstFileName.replace(/\.pdf$/i, '')}`) + ext;
+            } else {
+                finalFileName = (customName || 'processed') + '.pdf';
+            }
+
             clearInterval(this.progressInterval);
             this.updateProgressBar(100);
 
             setTimeout(() => {
-                this.showSuccess(resultBlob, fileName);
+                this.showSuccess(resultBlob, finalFileName);
             }, 500);
 
         } catch (error) {
