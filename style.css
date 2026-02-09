@@ -500,7 +500,61 @@ select.form-input {
     font-size: 0.95rem;
 }
 
-/* Thumbnail Grid */
+/* View Toggle Buttons */
+.view-toggle-group {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-glass);
+    padding: 3px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-glass);
+}
+
+.view-toggle-btn {
+    width: 32px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+.view-toggle-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.view-toggle-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+.light-mode .view-toggle-group {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .view-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .view-toggle-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Thumbnail Grid (Default) */
 .file-list {
     list-style: none;
     display: grid;
@@ -509,6 +563,118 @@ select.form-input {
     max-height: 340px;
     overflow-y: auto;
     padding: 0.25rem;
+}
+
+/* List View Mode */
+.file-list.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    grid-template-columns: none;
+}
+
+.file-list.list-view .file-thumb {
+    flex-direction: row;
+    padding: 0.5rem 0.75rem;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.file-list.list-view .thumb-serial {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.file-list.list-view .btn-remove-thumb {
+    position: relative;
+    top: 0;
+    right: 0;
+    opacity: 0.6;
+    width: 24px;
+    height: 24px;
+    order: 5;
+}
+
+.file-list.list-view .btn-remove-thumb i {
+    width: 12px;
+    height: 12px;
+}
+
+.file-list.list-view .file-thumb:hover .btn-remove-thumb {
+    opacity: 1;
+}
+
+.file-list.list-view .thumb-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    border-radius: 6px;
+}
+
+.file-list.list-view .thumb-icon i {
+    width: 16px;
+    height: 16px;
+}
+
+.file-list.list-view .thumb-info {
+    flex: 1;
+    text-align: left;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.file-list.list-view .thumb-name {
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
+.file-list.list-view .thumb-size {
+    font-size: 0.75rem;
+}
+
+.file-list.list-view .thumb-drag-hint {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    order: 4;
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.file-list.list-view .thumb-drag-hint i {
+    width: 18px;
+    height: 18px;
+}
+
+.file-list.list-view .file-thumb:hover .thumb-drag-hint {
+    opacity: 1;
+}
+
+/* List View Drop Indicators - Horizontal bars for vertical layout */
+.file-list.list-view .file-thumb.drop-before::before {
+    left: 0;
+    right: 0;
+    top: -5px;
+    bottom: auto;
+    width: auto;
+    height: 4px;
+}
+
+.file-list.list-view .file-thumb.drop-after::after {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: -5px;
+    width: auto;
+    height: 4px;
 }
 
 .file-thumb {
@@ -883,24 +1049,26 @@ select.form-input {
 }
 
 
-/* Action Button Container */
+/* Action Button Container - Inline Layout */
 .action-btn-container {
     text-align: center;
-    padding: 1rem 0;
+    padding: 0.75rem 0;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
-/* Output Filename Input */
+/* Output Filename Input - Inline */
 .output-filename-wrapper {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     gap: 0.5rem;
-    width: 100%;
-    max-width: 400px;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .output-filename-label {
@@ -922,12 +1090,13 @@ select.form-input {
     display: flex;
     align-items: center;
     gap: 0;
-    width: 100%;
+    width: 220px;
     background: var(--bg-glass);
     border: 1px solid var(--border-glass);
     border-radius: var(--radius-md);
     overflow: hidden;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .output-filename-input-group:focus-within {
@@ -937,11 +1106,11 @@ select.form-input {
 
 .output-filename-input {
     flex: 1;
-    padding: 0.65rem 0.875rem;
+    padding: 0.5rem 0.75rem;
     background: transparent;
     border: none;
     color: var(--text-main);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     min-width: 0;
 }
 
@@ -955,10 +1124,10 @@ select.form-input {
 }
 
 .output-filename-ext {
-    padding: 0.65rem 0.875rem;
+    padding: 0.5rem 0.6rem;
     background: rgba(99, 102, 241, 0.1);
     color: var(--primary);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     border-left: 1px solid var(--border-glass);
     flex-shrink: 0;

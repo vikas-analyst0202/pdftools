@@ -11,9 +11,11 @@ const app = {
     dropTargetIndex: null,
     deferredPrompt: null, // For PWA install
     progressInterval: null,
+    viewMode: 'thumbnail', // 'thumbnail' or 'list'
 
     init() {
         this.loadTheme();
+        this.loadViewMode();
         this.bindEvents();
 
         // Smart Tool Defaults: Load last used tool
@@ -53,6 +55,46 @@ const app = {
         // Reset icon HTML and re-render
         themeToggle.innerHTML = `<i data-lucide="${isDark ? 'moon' : 'sun'}"></i>`;
         if (typeof lucide !== 'undefined') lucide.createIcons();
+    },
+
+    loadViewMode() {
+        const savedMode = localStorage.getItem('fileViewMode');
+        if (savedMode === 'list' || savedMode === 'thumbnail') {
+            this.viewMode = savedMode;
+        }
+        this.applyViewMode();
+    },
+
+    setViewMode(mode) {
+        if (mode !== 'list' && mode !== 'thumbnail') return;
+        this.viewMode = mode;
+        localStorage.setItem('fileViewMode', mode);
+        this.applyViewMode();
+    },
+
+    applyViewMode() {
+        const fileList = document.getElementById('file-list');
+        const listBtn = document.getElementById('view-list-btn');
+        const gridBtn = document.getElementById('view-grid-btn');
+
+        if (fileList) {
+            if (this.viewMode === 'list') {
+                fileList.classList.add('list-view');
+            } else {
+                fileList.classList.remove('list-view');
+            }
+        }
+
+        // Update toggle button states
+        if (listBtn && gridBtn) {
+            if (this.viewMode === 'list') {
+                listBtn.classList.add('active');
+                gridBtn.classList.remove('active');
+            } else {
+                listBtn.classList.remove('active');
+                gridBtn.classList.add('active');
+            }
+        }
     },
 
     bindEvents() {
@@ -512,6 +554,7 @@ const app = {
         }
 
         lucide.createIcons();
+        this.applyViewMode();
     },
 
     formatFileSize(bytes) {

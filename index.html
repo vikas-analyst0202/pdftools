@@ -111,6 +111,17 @@
                     <div class="file-list-header">
                         <h3>Selected Files (<span id="file-count">0</span>) · <span id="total-size">0 KB</span></h3>
                         <p class="reorder-hint text-sm text-muted">Drag to reorder</p>
+                        <div class="view-toggle-group">
+                            <button class="view-toggle-btn" id="view-list-btn" onclick="app.setViewMode('list')"
+                                data-tooltip="List View" data-tooltip-pos="bottom">
+                                <i data-lucide="list"></i>
+                            </button>
+                            <button class="view-toggle-btn active" id="view-grid-btn"
+                                onclick="app.setViewMode('thumbnail')" data-tooltip="Grid View"
+                                data-tooltip-pos="bottom">
+                                <i data-lucide="grid-3x3"></i>
+                            </button>
+                        </div>
                         <button class="btn btn-link" onclick="app.clearFiles()">Clear All</button>
                     </div>
                     <ul id="file-list" class="file-list">
@@ -126,12 +137,13 @@
                             Output Filename:
                         </label>
                         <div class="output-filename-input-group">
-                            <input type="text" id="output-filename" class="output-filename-input" placeholder="merged_document">
+                            <input type="text" id="output-filename" class="output-filename-input"
+                                placeholder="merged_document">
                             <span class="output-filename-ext" id="output-filename-ext">.pdf</span>
                         </div>
                     </div>
-                    <button class="btn btn-large btn-gradient" id="process-btn">
-                        <i data-lucide="zap"></i> Process Files
+                    <button class="btn btn-gradient" id="process-btn">
+                        <i data-lucide="zap"></i> Process
                     </button>
                 </div>
 
